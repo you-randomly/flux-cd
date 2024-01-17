@@ -12,7 +12,7 @@ metadata:
   namespace: my-namespace
 spec:
   containers:
-  - image: nginx
+  - image: linuxserver/firefox
     name: nginx
     resources: {}
   dnsPolicy: ClusterFirst
