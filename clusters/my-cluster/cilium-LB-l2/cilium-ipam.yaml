@@ -3,4 +3,5 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: "my-lb-pool"
 spec:
-  podCIDR: 192.168.2.2/28
+  blocks:
+    - "192.168.2.2/28"
