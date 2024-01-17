@@ -4,13 +4,17 @@ metadata:
   name: my-namespace
 ---
 apiVersion: v1
-kind: pod
+kind: Pod
 metadata:
-  name: my-pod
+  labels:
+    run: nginx
+  name: nginx
   namespace: my-namespace
 spec:
   containers:
-  - name: my-container
-    image: nginx
-    ports:
-    - containerPort: 80
+  - image: nginx
+    name: nginx
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
