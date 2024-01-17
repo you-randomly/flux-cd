@@ -4,4 +4,4 @@ metadata:
   name: "my-lb-pool"
 spec:
   blocks:
-    - "192.168.2.2/28"
+  - cidr: "192.168.2.2/28"
