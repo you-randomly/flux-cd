@@ -4,6 +4,20 @@ metadata:
   name: my-namespace
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: my-namespace
+spec:
+  selector:
+    run: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: v1
 kind: Pod
 metadata:
   labels:
@@ -12,8 +26,10 @@ metadata:
   namespace: my-namespace
 spec:
   containers:
-  - image: linuxserver/firefox
+  - image: traefik/whoami
     name: nginx
+    ports:
+    - containerPort: 80
     resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
