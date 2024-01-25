@@ -7,10 +7,9 @@ metadata:
 spec:
   chart:
     spec:
-      chart: longhorn
+      chart:  chart
       reconcileStrategy: ChartVersion
       sourceRef:
-        kind: HelmRepository
+        kind: GitRepository
         name: longhorn-repo
-      version: 1.6.0-rc2
   interval: 1m0s
