@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audiobookshelf
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf
+    spec:
+      containers:
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: audiobooks-volume
+              mountPath: /audiobooks
+      volumes:
+        - name: audiobooks-volume
+          nfs:
+            server: 192.168.2.184
+            path: /media/audiobooks
+---
+# service
+apiVersion: v1
+kind: Service
+metadata:
+  name: audiobookshelf
+spec:
+  selector:
+    app: audiobookshelf
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+---
+# ingress traeffik
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: audiobookshelf
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - host: audiobookshelf.lab.jake-watson.co.uk
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: audiobookshelf
+                port:
+                  number: 80
