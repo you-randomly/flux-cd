@@ -15,7 +15,9 @@ spec:
       version: '>v25.0'
   interval: 10m0s
   values:
-    experimental.kubernetesGateway.enabled: true
+    experimental:
+      kubernetesGateway:
+        enabled: true
     image:
       tag: "v3.0.0-rc5"
     persistence:
