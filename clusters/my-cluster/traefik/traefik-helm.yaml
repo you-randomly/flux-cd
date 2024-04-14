@@ -17,7 +17,7 @@ spec:
   values:
     experimental.kubernetesGateway.enabled: true
     image:
-      tag: "v3.0"
+      tag: "v3.0.0-rc5"
     persistence:
       enabled: true
       name: data
