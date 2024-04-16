@@ -8,13 +8,12 @@ spec:
   chart:
     spec:
       chart: cilium
-      reconciliationStrategy: "ChartVersion"
+      reconcilieStrategy: "ChartVersion"
       sourceRef:
         kind: HelmRepository
         name: cilium
         namespace: flux-system
       version: '>1.15.4'
-    repository: https://helm.cilium.io/
   values:
     cgroup:
       autoMount:
