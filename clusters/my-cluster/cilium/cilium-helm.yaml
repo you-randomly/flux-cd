@@ -15,7 +15,6 @@ spec:
         namespace: flux-system
       version: '>1.15.4'
     repository: https://helm.cilium.io/
-    name: cilium
   values:
     cgroup:
       autoMount:
