@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  targetNamespace: kube-system
   chart:
     spec:
       chart: cilium
