@@ -50,6 +50,5 @@ spec:
             type: PathPrefix
             value: /whoami
       backendRefs:
-        - name: whoami
-          namespace: my-namespace
+        - name: nginx-service
           port: 80
