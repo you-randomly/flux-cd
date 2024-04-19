@@ -29,3 +29,6 @@ spec:
     additionalArguments:
     - "--experimental.kubernetesgateway=true"
     - "--providers.kubernetesgateway=true"
+    port:
+      http:
+      exposedPort: 80
