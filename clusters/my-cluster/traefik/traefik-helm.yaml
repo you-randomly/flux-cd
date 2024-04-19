@@ -29,6 +29,10 @@ spec:
     additionalArguments:
     - "--experimental.kubernetesgateway=true"
     - "--providers.kubernetesgateway=true"
-    port:
-      web:
+    ports:
+    - web:
         Port: 80
+      traefik:
+        Port: 8080
+        expose: true
+        
