@@ -67,7 +67,7 @@ spec:
         args:
         - --source=service
         - --source=ingress
-        - --source=gatway-httproute
+        - --source=gateway-httproute
         - --source=gateway-tcproute
         - --source=gateway-udproute
         - --source=gateway-tlsroute
