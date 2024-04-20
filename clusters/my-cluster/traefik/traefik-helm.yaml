@@ -30,9 +30,6 @@ spec:
     - "--experimental.kubernetesgateway=true"
     - "--providers.kubernetesgateway=true"
     ports:
-    - web:
-        Port: 80
       traefik:
-        Port: 8080
-        expose: true
-        
+        expose:
+          default: true 
