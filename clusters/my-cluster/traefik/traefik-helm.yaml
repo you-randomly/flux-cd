@@ -29,6 +29,15 @@ spec:
     additionalArguments:
     - "--experimental.kubernetesgateway=true"
     - "--providers.kubernetesgateway=true"
+    - "--api.dashboard=true"
+    - "--api.insecure=true"
+    logs:
+      access:
+        enabled: true
+        filePath: "/var/log/traefik/access.log"
+    additionalVolumes:
+      name: logs
+      mountPath: /var/log/traefik
     ports:
       traefik:
         expose:
