@@ -16,6 +16,7 @@ spec:
         namespace: flux-system
       version: '>v1.15.3'
   values:
+    policyEnforcementMode: "never"
     cgroup:
       autoMount:
         enabled: false
