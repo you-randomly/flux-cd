@@ -1,0 +1,16 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: pihole-password
+  namespace: external-dns
+spec:
+  encryptedData:
+    token: AgCdy9rYG2oJFs/1qH/9KvwRdbZI7vgY/Mp610BMa3a298mcam71VuURLyRW94mK1bbA/QtErqt6qNo4+L+ila+HNO3UvfKPVC0DgD8cmOfhLchsTG0zTvzTXt0oPw7CQwdDYHFi8FqZhGp7gyp5Ewz0DaPr2H2LakiGDyhI1Pj2mn+qYpINwru8SjnqqWy1nwAQ2JwhdNWMek4pHtJbtNRmRCw0BIOKrEZEotFqJRn9NnM2leVWjogjk3EyzFsLN+a8QGoLTySh2jA1NK6jcTU1Xsk/9AUWrTrxWd0Q0ePIAZTKNn3ivlGmfi61OQ6TX1bpyY4EoOgE6gUMwd7b4Tx+KOB+CSfZdCEU0iPzoJR8EhtZ+BcgFmS6sb9kvZvePcI6zIWxnHEMQtM/QpsJIeBLLQIx6cOqryrJ0GrEOsM11ZNjbhp4dwYBdWGA7WhjGAi9OrTj/cYzJ5kru4ba4n+bFW9DhV29CnNlDFfXg4s9KC7ILCjlA0utb/AyhV883FDCoh5dzvzx1UodpDZ68PjNJ7WO2kS52dUi/88aa/Tgp3C2+lRYIUxCqqpUGrGsQfGKOkn73knj8mrZpotJfQ4jP7KI5SJuRqRunxc7BdKnYBZ13FwDzS2rHdS8nG5E1rkUErPSvS4Sn+7h+dAXNwUQXiqE3NGmXEEP5SB4t2XqHUeJAl3F/12b9WjVvFcFXwQ32oNGjEWkgPevAdkXZwfMVU0No6oxO4vemrr5Z/xlBvep91mTop7TGisASN2mgV5IRLLIcU97uhpIO/zbM+TrEw==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: pihole-password
+      namespace: external-dns
+    type: Opaque
