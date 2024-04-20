@@ -36,7 +36,7 @@ spec:
         enabled: true
         filePath: "/var/log/traefik/access.log"
     additionalVolumeMounts:
-      name: logs
+    - name: logs
       mountPath: /var/log/traefik
     deployment:
       additionalVolumes:
