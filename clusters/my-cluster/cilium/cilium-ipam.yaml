@@ -4,4 +4,5 @@ metadata:
   name: "my-lb-pool"
 spec:
   cidrs:
-    - cidr: "192.168.2.8/29"
+    - start: "192.168.2.2"
+      stop: "192.168.2.18"
