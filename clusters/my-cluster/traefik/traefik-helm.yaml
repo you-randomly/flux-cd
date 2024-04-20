@@ -35,9 +35,12 @@ spec:
       access:
         enabled: true
         filePath: "/var/log/traefik/access.log"
-    additionalVolumes:
+    additionalVolumeMounts:
       name: logs
       mountPath: /var/log/traefik
+    deployment:
+      additionalVolumes:
+      - name: logs
     ports:
       traefik:
         expose:
