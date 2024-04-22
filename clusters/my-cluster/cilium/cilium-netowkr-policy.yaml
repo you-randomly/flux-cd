@@ -1,9 +1,8 @@
 apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
+kind: CiliumClusterwideNetworkPolicy
 metadata:
   name: "http-ingress-visiblity"
 spec:
-  description: "Allow HTTP GET /public from env=prod to app=service"
   endpointSelector:
     matchLabels: {}
   ingress:
