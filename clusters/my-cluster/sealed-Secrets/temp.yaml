@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  deployKey: cHgtZGVwLTRmZDc0NTIyLTZkYmUtNGMwZi05YzUyLWYwYjljNDIxMGMxMw==
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: pixie-deploy-key
+  namespace: pl-operator
