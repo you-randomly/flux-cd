@@ -22,7 +22,7 @@ rules:
   resources: ["ingresses"]
   verbs: ["get","watch","list"]
 - apiGroups: ["gateway.networking.k8s.io"]
-  resources: ["httproutes","tcproutes","udproutes","tlsroutes"]
+  resources: ["gateways","httproutes","tcproutes","udproutes","tlsroutes"]
   verbs: ["get","watch","list"]
 - apiGroups: [""]
   resources: ["nodes"]
