@@ -80,7 +80,7 @@ spec:
     - name: traefik-gateway
       namespace: traefik
   hostnames:
-    - audiobookshelf.lab.jake-watson.co.uk
+    - abs.lab.jake-watson.co.uk
   rules:
     - backendRefs:
         - name: audiobookshelf
