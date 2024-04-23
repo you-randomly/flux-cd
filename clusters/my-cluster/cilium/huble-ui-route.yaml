@@ -5,10 +5,10 @@ metadata:
   namespace: kube-system
 spec:
   parentRefs:
-    #- name: traefik-gateway
-    #  namespace: traefik
-    - name: cilium-gateway
-      namespace: kube-system
+    - name: traefik-gateway
+      namespace: traefik
+    #- name: cilium-gateway
+    #  namespace: kube-system
   hostnames:
     - hubble.lab.jake-watson.co.uk
   rules:
