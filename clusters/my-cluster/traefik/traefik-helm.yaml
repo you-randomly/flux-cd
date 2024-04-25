@@ -40,9 +40,14 @@ spec:
     additionalVolumeMounts:
     - name: logs
       mountPath: /var/log/traefik
+    - name: plugins
+      mountPath: /plugins-storage/
     deployment:
       additionalVolumes:
       - name: logs
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
     ports:
       traefik:
         expose:
