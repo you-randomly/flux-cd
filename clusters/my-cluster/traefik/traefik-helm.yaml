@@ -31,6 +31,8 @@ spec:
     - "--providers.kubernetesgateway=true"
     - "--api.dashboard=true"
     - "--api.insecure=true"
+    - "--experimental.plugins.crowdsec-bouncer-traefik-plugin.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+    - "--experimental.plugins.crowdsec-bouncer-traefik-plugin.version=v1.3.0-beta4"
     logs:
       access:
         enabled: true
