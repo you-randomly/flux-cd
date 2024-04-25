@@ -48,7 +48,7 @@ spec:
     - traefik.lab.jake-watson.co.uk
   rules:
     - backendRefs:
-        - name: traefik-dashboard
+        - name: traefik
           port: 9000
 ---
 # external dns record
