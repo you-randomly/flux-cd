@@ -31,16 +31,16 @@ spec:
   listeners:
     - name: http
       hostname: "*.lab.jake-watson.co.uk"
-      protocol: HTTPS
+      protocol: HTTP
       port: 8443
       allowedRoutes:
         namespaces:
           from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: jake-watson-co-uk-tls
-            namespace: cert-manager
+      #tls:
+      #  mode: Terminate
+      #  certificateRefs:
+      #    - name: jake-watson-co-uk-tls
+      #      namespace: cert-manager
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
