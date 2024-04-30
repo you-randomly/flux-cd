@@ -19,7 +19,7 @@ spec:
       kubernetesGateway:
         enabled: true
     image:
-      tag: "v3.0.0-rc5"
+      tag: "v3.0.0"
     persistence:
       enabled: true
       name: data
