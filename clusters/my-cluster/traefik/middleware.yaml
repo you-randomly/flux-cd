@@ -7,4 +7,4 @@ spec:
     plugin:
         crowdsec-bouncer-traefik-plugin:
             CrowdsecLapiKey: 40796d93c2958f9e58345514e67740e5
-            Enabled: "false"
+            Enabled: "true"
