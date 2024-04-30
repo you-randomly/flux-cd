@@ -1,0 +1,20 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: jakewato@hotmail.co.uk
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # use staging for testing
+    #server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        cloudflare:
+          email: jakewato@hotmail.co.uk
+          apiTokenSecretRef:
+            name: cloudflare-api-key
+            key: api-key

@@ -1,0 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jake-watson-co-uk
+  namespace: cert-manager
+spec:
+  secretName: jake-watson-co-uk-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: "*.jake-watson.co.uk"
+  dnsNames:
+    - "*.jake-watson.co.uk"
+    - "jake-watson.co.uk"
+    - "*.lab.jake-watson.co.uk"
