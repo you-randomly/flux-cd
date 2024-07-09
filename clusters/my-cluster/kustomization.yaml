@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - gatewayapi/experimental-install.yaml
+  
   - cilium/cillium-source.yaml
   - cilium/cilium-helm.yaml
   - cilium/gatewayclass.yaml
@@ -12,16 +14,17 @@ resources:
   - flux-system/gotk-sync.yaml
   - flux-system/gotk-components.yaml
 
-  - gatewayapi/experimental-install.yaml
+  - sealed-Secrets/sealed-secrets-source.yaml
+  - sealed-Secrets/sealed-secrets-helm.yaml
 
-  - external-DNS/pihole-sealed.yaml
-  - external-DNS/externla-DNS.yaml
   - external-DNS/CRDs.yaml
+  - external-DNS/externla-DNS.yaml
+  - external-DNS/pihole-sealed.yaml
 
-  - cert-manager/issuer.yaml
-  - cert-manager/cf-key-seal.yaml
   - cert-manager/cert-manager-source.yaml
   - cert-manager/cert-manager-helm.yaml
+  - cert-manager/issuer.yaml
+  - cert-manager/cf-key-seal.yaml
   - cert-manager/certificate.yaml
  
   - traefik/traefik-source.yaml
@@ -30,17 +33,14 @@ resources:
   - traefik/traefik-gateway-class.yaml
   - traefik/middleware.yaml
 
-  - sealed-Secrets/sealed-secrets-source.yaml
-  - sealed-Secrets/sealed-secrets-helm.yaml
-
-  - longhorn/namespace-security.yaml
-  - longhorn/longhorn-HTTProute.yaml
   - longhorn/helmrepo.yaml
   - longhorn/helmrelease.yaml
+  - longhorn/namespace-security.yaml
+  - longhorn/longhorn-HTTProute.yaml
 
-  - kube-promethus-stack/namespace.yaml
   - kube-promethus-stack/kube-prometheus-source.yaml
   - kube-promethus-stack/kube-prometheus-helm.yaml
+  - kube-promethus-stack/namespace.yaml
   - kube-promethus-stack/hhtproute.yaml
 
   - audiobookshelf/audiobookshelf.yaml
