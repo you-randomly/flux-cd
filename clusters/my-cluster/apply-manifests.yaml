@@ -79,7 +79,7 @@ spec:
     - name: cilium
     - name: sealed-secrets
   interval: 10m0s
-  path: ./clusters/my-cluster/external-dns/
+  path: ./clusters/my-cluster/external-DNS/
   prune: true
   sourceRef:
     kind: GitRepository
@@ -94,7 +94,7 @@ spec:
   dependsOn:
     - name: sealed-secrets
   interval: 10m0s
-  path: ./clusters/my-cluster/cert-manager/
+  path: ./clusters/my-cluster/cert-manager/helm/
   prune: true
   sourceRef:
     kind: GitRepository
