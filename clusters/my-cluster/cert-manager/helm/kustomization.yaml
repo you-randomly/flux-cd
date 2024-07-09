@@ -1,6 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - certificate.yaml
-  - cf-key-seal.yaml
-  - issuer.yaml
+  - cert-manager-helm.yaml
+  - install-config.yaml
