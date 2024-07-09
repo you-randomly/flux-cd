@@ -1,10 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - cillium-source.yaml
   - cilium-helm.yaml
   - cilium-ipam.yaml
   - cilium-l2-a-p.yaml
   - cilium-netowkr-policy.yaml
-  - cillium-source.yaml
   - gatewayclass.yaml
   - huble-ui-route.yaml
