@@ -63,7 +63,7 @@ spec:
   dependsOn:
     - name: cilium
   interval: 10m0s
-  path: ./clusters/my-cluster/sealed-secrets/
+  path: ./clusters/my-cluster/sealed-Secrets/
   prune: true
   sourceRef:
     kind: GitRepository
