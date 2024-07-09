@@ -1,0 +1,48 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: HelmRepository
+metadata:
+  name: longhorn
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/longhorn/longhorn
+  chart:
+    name: longhorn
+    version: 1.6.0-rc2
+    sourceRef:
+      kind: GitRepository
+      name: longhorn
+      namespace: flux-system
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: longhorn
+      version: 1.6.0-rc2
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+  values:
+    persistence:
+      defaultClass: longhorn
+      defaultClassReplicaCount: 1
+      defaultClassStorageProvisioner: driver.longhorn.io
+      defaultClassVolumeBindingMode: WaitForFirstConsumer
+      enableApiGroup: true
+      enableReplicaAutoBalance: true
+      enableVolumeReplicaAutoBalance: true
+      enableVolumeReplicaRebuild: true
+      enableVolumeReplicaReplenishment: true
+      enableVolumeStatsAggregator: true
+      enableVolumeStatsReplenishment: true
+      enableVolumeStatsUpdate: true
+      enableVolumeUsageStats: true
+      enableVolumeUsageStatsReplenishment: true
+      enableVolumeUsageStatsUpdate: true
