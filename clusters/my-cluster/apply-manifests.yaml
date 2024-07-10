@@ -34,7 +34,7 @@ spec:
     - name: gatewayapi
     - name: helm-sources
   interval: 10m0s
-  path: ./clusters/my-cluster/cilium/
+  path: ./clusters/my-cluster/cilium/helm
   prune: true
   sourceRef:
     kind: GitRepository
