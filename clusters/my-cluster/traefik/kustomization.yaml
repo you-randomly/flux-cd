@@ -4,5 +4,3 @@ resources:
   - middleware.yaml
   - traefik-gateway-class.yaml
   - traefik-gateway-RBAC.yaml
-  - traefik-helm.yaml
-  - traefik-source.yaml
