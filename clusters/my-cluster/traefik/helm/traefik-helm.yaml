@@ -5,6 +5,7 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
+  targetNamespace: traefik
   chart:
     spec:
       chart: traefik
