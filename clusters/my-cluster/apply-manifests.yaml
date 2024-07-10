@@ -62,6 +62,7 @@ metadata:
 spec:
   dependsOn:
     - name: cilium
+  targetNamespace: sealed-secrets
   interval: 10m0s
   path: ./clusters/my-cluster/sealed-Secrets/
   prune: true
@@ -78,6 +79,7 @@ spec:
   dependsOn:
     - name: cilium
     - name: sealed-secrets
+  targetNamespace: external-dns
   interval: 10m0s
   path: ./clusters/my-cluster/external-DNS/
   prune: true
@@ -93,6 +95,7 @@ metadata:
 spec:
   dependsOn:
     - name: sealed-secrets
+  targetNamespace: cert-manager
   interval: 10m0s
   path: ./clusters/my-cluster/cert-manager/helm/
   prune: true
@@ -110,6 +113,7 @@ spec:
     - name: cilium
     - name: cert-manager
     - name: external-dns
+  targetNamespace: traefik
   interval: 10m0s
   path: ./clusters/my-cluster/traefik/helm/
   prune: true
@@ -125,6 +129,7 @@ metadata:
 spec:
   dependsOn:
     - name: traefik
+  targetNamespace: audiobookshelf
   interval: 10m0s
   path: ./clusters/my-cluster/audiobookshelf/
   prune: true
