@@ -7,3 +7,9 @@ metadata:
 spec:
   interval: 10m0s
   url: https://traefik.github.io/charts
+---
+# make namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: traefik
