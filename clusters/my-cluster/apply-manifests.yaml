@@ -32,7 +32,7 @@ metadata:
 spec:
   dependsOn:
     - name: gatewayapi
-      name: helm-sources
+    - name: helm-sources
   interval: 10m0s
   path: ./clusters/my-cluster/cilium/
   prune: true
