@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: cert-manager
+      version: "v1.21.0"
+      sourceRef:
+        kind: HelmRepository
+        name: jetstack
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    installCRDs: true
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: cf-cert-manager
+  namespace: cert-manager
+spec:
+  refreshInterval: 10s
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+  - secretKey: cf-cert-manager
+    remoteRef:
+      key: "19a22689-3417-4de4-9406-b1ea011195b7"
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: jakewato@hotmail.co.uk
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        cloudflare:
+          email: jakewato@hotmail.co.uk
+          apiTokenSecretRef:
+            name: cf-cert-manager
+            key: cf-cert-manager
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: jake-watson-co-uk
+  namespace: default
+spec:
+  secretName: jake-watson-co-uk-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: "*.jake-watson.co.uk"
+  dnsNames:
+    - "*.jake-watson.co.uk"
+    - "jake-watson.co.uk"
+    - "*.lab.jake-watson.co.uk"
+    - "audiobookself.nomad.jake-watson.co.uk"

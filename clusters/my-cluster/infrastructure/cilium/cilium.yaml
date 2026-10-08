@@ -1,0 +1,132 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allowfromns-gateway
+  namespace: cert-manager
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: default
+  to:
+  - group: ""
+    kind: Secret
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gateway
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  addresses: 
+    - type: IPAddress
+      value: 192.168.200.3
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      hostname: "*.lab.jake-watson.co.uk"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: jake-watson-co-uk-tls
+            kind: Secret
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gateway-external
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  addresses: 
+    - type: IPAddress
+      value: 192.168.200.2
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      hostname: "*.lab.jake-watson.co.uk"
+      protocol: HTTPS
+      port: 443
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: jake-watson-co-uk-tls
+            kind: Secret
+---
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: "internal"
+spec:
+  blocks:
+  - start: "192.168.200.2"
+    stop: "192.168.200.9"
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "l7-visibility"
+  namespace: default
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: "io.kubernetes.pod.namespace"
+        operator: "NotIn"
+        values:
+        - "kube-system"
+  egress:
+  - toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      rules:
+        dns:
+        - matchPattern: "*"
+  ingress:
+  - toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+      rules:
+        dns:
+        - matchPattern: "*"
+  - toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        dns:
+        - matchPattern: "*"
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: ui-hubble
+  namespace: kube-system
+spec:
+  hostnames:
+   - hubble.lab.jake-watson.co.uk
+  parentRefs:
+   - name: cilium-gateway
+     namespace: default
+  rules:
+   - backendRefs:
+     - name: hubble-ui
+       port: 80

@@ -1,0 +1,69 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vpa
+  namespace: kube-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: vpa
+      version: "4.11.0"
+      sourceRef:
+        kind: HelmRepository
+        name: fairwinds
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    recommender:
+      enabled: true
+    updater:
+      enabled: false
+    admissionController:
+      enabled: false
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: audiobookshelf
+  updatePolicy:
+    updateMode: "Off"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: foundry-vtt
+  updatePolicy:
+    updateMode: "Off"
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: loki
+  namespace: loki
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: StatefulSet
+    name: loki
+  updatePolicy:
+    updateMode: "Off"

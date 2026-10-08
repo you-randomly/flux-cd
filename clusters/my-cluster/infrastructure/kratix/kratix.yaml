@@ -1,0 +1,96 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: kratix-foundry
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/you-randomly/kratix-foundry.git
+  ref:
+    branch: main
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kratix
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./deploy/kratix
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kratix-foundry
+  targetNamespace: kratix-platform-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kratix-infrastructure
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kratix
+  interval: 10m
+  path: ./deploy/infrastructure
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kratix-foundry
+  targetNamespace: kratix-platform-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kratix-promises
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: kratix-infrastructure
+  interval: 10m
+  path: ./deploy/production
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: kratix-foundry
+  targetNamespace: kratix-platform-system
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: foundry-credentials
+  namespace: kratix-platform-system
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: foundry-credentials
+  data:
+    - secretKey: password
+      remoteRef:
+        key: "1d5d6edc-8005-4313-8524-b1f601490707"
+    - secretKey: username
+      remoteRef:
+        key: "419ba4a2-8683-4fbd-811e-b1f60148c9aa"
+    - secretKey: adminPassword
+      remoteRef:
+        key: "d4595a98-1408-4218-a70f-b1f6014de185"
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: foundry-license
+  namespace: kratix-platform-system
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: foundry-license
+  data:
+    - secretKey: license-key
+      remoteRef:
+        key: "66aaa0b2-d962-4608-96c9-b1f6014d5534"

@@ -1,0 +1,413 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: victoria-metrics
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/warn-version: latest
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics
+  namespace: victoria-metrics
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: victoria-metrics-k8s-stack
+      version: "0.86.0"
+      sourceRef:
+        kind: HelmRepository
+        name: victoriametrics
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    fullnameOverride: vm
+    kubeScheduler:
+      vmScrape:
+        spec:
+          endpoints:
+            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              port: http-metrics
+              scheme: https
+              tlsConfig:
+                caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                insecureSkipVerify: true
+    kubeControllerManager:
+      vmScrape:
+        spec:
+          endpoints:
+            - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+              port: http-metrics
+              scheme: https
+              tlsConfig:
+                caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                insecureSkipVerify: true
+    defaultDashboards:
+      useOwnerReferences: false
+    vmsingle:
+      spec:
+        storage:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: longhorn-talos
+    vlsingle:
+      enabled: true
+      spec:
+        storage:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: longhorn-talos
+    grafana:
+      enabled: true
+      plugins:
+        - victoriametrics-metrics-datasource
+        - victoriametrics-logs-datasource
+      sidecar:
+        dashboards:
+          enabled: true
+        datasources:
+          enabled: true
+---
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: ui-victoria-metrics
+  namespace: victoria-metrics
+spec:
+  hostnames:
+    - grafana.lab.jake-watson.co.uk
+  parentRefs:
+  - name: cilium-gateway
+    namespace: default
+  rules:
+  - backendRefs:
+      - name: victoria-metrics-grafana
+        port: 80
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vmagent-config-reloader-patch
+  namespace: victoria-metrics
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vmagent-config-reloader-patch
+  namespace: victoria-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vmagent-config-reloader-patch
+subjects:
+- kind: ServiceAccount
+  name: vmagent-vm
+  namespace: victoria-metrics
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-victorialogs-explorer
+  namespace: victoria-metrics
+  labels:
+    grafana_dashboard: "1"
+data:
+  victorialogs-explorer.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "description": "Dashboard to explore VictoriaLogs by namespace, pod, and container",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [
+        {
+          "asDropdown": false,
+          "icon": "bolt",
+          "includeVars": true,
+          "keepTime": true,
+          "tags": [],
+          "targetBlank": true,
+          "title": "View In Explore",
+          "tooltip": "",
+          "type": "link",
+          "url": "/explore?orgId=1&left={\"datasource\":\"VictoriaLogs\",\"queries\":[{\"expr\":\"_stream: {k8s.container.name=~\\\"$container\\\", k8s.namespace.name=\\\"$namespace\\\", k8s.pod.name=~\\\"$pod\\\"} $query\"}]}"
+        },
+        {
+          "asDropdown": false,
+          "icon": "external link",
+          "includeVars": false,
+          "keepTime": false,
+          "tags": [],
+          "targetBlank": true,
+          "title": "Learn LogsQL",
+          "tooltip": "",
+          "type": "link",
+          "url": "https://docs.victoriametrics.com/victorialogs/logsql/"
+        }
+      ],
+      "panels": [
+        {
+          "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "bars",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 80 }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 6, "w": 18, "x": 0, "y": 0 },
+          "id": 2,
+          "options": {
+            "legend": { "calcs": ["sum"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+              "editorMode": "code",
+              "expr": "_stream: {k8s.container.name=~\"$container\", k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"} $query | stats count()",
+              "legendFormat": "${namespace} ${container}",
+              "queryType": "statsRange",
+              "refId": "A"
+            }
+          ],
+          "title": "Logs in ${namespace} for ${container}",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+              "mappings": [],
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+          "id": 3,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "pieType": "pie",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "tooltip": { "hideZeros": false, "mode": "single", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+              "editorMode": "code",
+              "expr": "_stream: {k8s.container.name=~\"$container\", k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"} $query | stats by (\"$count_by\") count() c | sort by (c desc) | limit 50",
+              "legendFormat": "{{$count_by}}",
+              "queryType": "stats",
+              "refId": "A"
+            }
+          ],
+          "title": "Count by $count_by",
+          "type": "piechart"
+        },
+        {
+          "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+          "gridPos": { "h": 23, "w": 24, "x": 0, "y": 6 },
+          "id": 1,
+          "options": {
+            "dedupStrategy": "none",
+            "enableInfiniteScrolling": false,
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+              "editorMode": "code",
+              "expr": "_stream: {k8s.container.name=~\"$container\", k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"} $query | sort desc | limit $limit",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Logs in ${namespace} for ${container}",
+          "type": "logs"
+        }
+      ],
+      "schemaVersion": 40,
+      "tags": ["victorialogs", "logs"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+            "definition": "",
+            "includeAll": false,
+            "name": "namespace",
+            "options": [],
+            "query": {
+              "field": "k8s.namespace.name",
+              "limit": 100,
+              "query": "",
+              "refId": "VictoriaLogsVariableQueryEditor-VariableQuery",
+              "type": "fieldValue"
+            },
+            "refresh": 2,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+            "definition": "{k8s.namespace.name=\"$namespace\"}",
+            "includeAll": true,
+            "name": "pod",
+            "options": [],
+            "query": {
+              "field": "k8s.pod.name",
+              "limit": 0,
+              "query": "{k8s.namespace.name=\"$namespace\"}",
+              "refId": "VictoriaLogsVariableQueryEditor-VariableQuery",
+              "type": "fieldValue"
+            },
+            "refresh": 2,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+            "definition": "{k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"}",
+            "includeAll": true,
+            "name": "container",
+            "options": [],
+            "query": {
+              "field": "k8s.container.name",
+              "limit": 0,
+              "query": "{k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"}",
+              "refId": "VictoriaLogsVariableQueryEditor-VariableQuery",
+              "type": "fieldValue"
+            },
+            "refresh": 2,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {},
+            "datasource": { "type": "victoriametrics-logs-datasource", "uid": "VictoriaLogs" },
+            "definition": "{k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"}",
+            "includeAll": false,
+            "name": "count_by",
+            "options": [],
+            "query": {
+              "field": "k8s.container.name",
+              "limit": 25,
+              "query": "{k8s.namespace.name=\"$namespace\", k8s.pod.name=~\"$pod\"}",
+              "refId": "VictoriaLogsVariableQueryEditor-VariableQuery",
+              "type": "fieldName"
+            },
+            "refresh": 2,
+            "regex": "/^[a-zA-Z].+/",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": { "text": "50", "value": "50" },
+            "name": "limit",
+            "options": [
+              { "selected": true, "text": "50", "value": "50" },
+              { "selected": false, "text": "100", "value": "100" },
+              { "selected": false, "text": "250", "value": "250" },
+              { "selected": false, "text": "500", "value": "500" },
+              { "selected": false, "text": "1000", "value": "1000" }
+            ],
+            "query": "50,100,250,500,1000",
+            "type": "custom"
+          },
+          {
+            "current": { "text": "", "value": "" },
+            "name": "query",
+            "options": [
+              { "selected": true, "text": "", "value": "" }
+            ],
+            "query": "",
+            "type": "textbox"
+          }
+        ]
+      },
+      "time": { "from": "now-30m", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "VictoriaLogs Explorer",
+      "uid": "victorialogs-explorer",
+      "version": 2
+    }

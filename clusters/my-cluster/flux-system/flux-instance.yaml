@@ -1,0 +1,33 @@
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+  annotations:
+    fluxcd.controlplane.io/reconcile: "enabled"
+    fluxcd.controlplane.io/reconcileEvery: "1h"
+spec:
+  distribution:
+    version: "2.8.x"
+    registry: "ghcr.io/fluxcd"
+  components:
+    - source-controller
+    - kustomize-controller
+    - helm-controller
+    - notification-controller
+    - image-reflector-controller
+    - image-automation-controller
+    - source-watcher
+  cluster:
+    type: kubernetes
+    multitenant: false
+    networkPolicy: false
+    domain: "cluster.local"
+  storage:
+    class: "longhorn-talos"
+    size: "10Gi"
+  sync:
+    kind: GitRepository
+    url: "https://github.com/you-randomly/flux-cd.git"
+    ref: "refs/heads/main"
+    path: "clusters/my-cluster"

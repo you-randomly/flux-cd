@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-dns
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-dns-cf
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pihole-password
+  namespace: external-dns
+spec:
+  refreshInterval: 10s
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+  - secretKey: EXTERNAL_DNS_PIHOLE_PASSWORD
+    remoteRef:
+      key: "db18c846-6bbb-41f8-830f-b1ea0122ab47"
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: cf-extdns-email
+  namespace: external-dns-cf
+spec:
+  refreshInterval: 10s
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+  - secretKey: email
+    remoteRef:
+      key: "c889f2df-2f9e-4c95-bd66-b1f40158de6a"
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: cf-extdns-key
+  namespace: external-dns-cf
+spec:
+  refreshInterval: 10s
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+  - secretKey: api-key
+    remoteRef:
+      key: "19a22689-3417-4de4-9406-b1ea011195b7"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-dns-cf
+  namespace: external-dns-cf
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns-cf
+rules:
+  - apiGroups: ["externaldns.k8s.io"]
+    resources: ["dnsendpoints"]
+    verbs: ["get","watch","list"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources: ["dnsendpoints/status"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns-viewer-cf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns-cf
+subjects:
+- kind: ServiceAccount
+  name: external-dns-cf
+  namespace: external-dns-cf
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: external-dns
+      version: "1.15.0"
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    provider:
+      name: pihole
+    registry: noop
+    sources:
+      - gateway-httproute
+    env:
+      - name: EXTERNAL_DNS_PIHOLE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: pihole-password
+            key: EXTERNAL_DNS_PIHOLE_PASSWORD
+      - name: EXTERNAL_DNS_PIHOLE_SERVER
+        value: "http://192.168.2.74"
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns-cf
+  namespace: external-dns-cf
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: external-dns
+      version: "1.15.0"
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    provider:
+      name: cloudflare
+    fullnameOverride: external-dns-cf
+    serviceAccount:
+      create: false
+      name: external-dns-cf
+    policy: sync
+    registry: txt
+    txtOwnerId: kubernetes
+    sources:
+      - crd
+    env:
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: cf-extdns-key
+            key: api-key

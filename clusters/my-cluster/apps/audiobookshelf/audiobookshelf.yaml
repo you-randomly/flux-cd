@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: audiobookshelf
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: audiobookshelf-audiobooks
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - nfsvers=4.1
+    - rsize=1048576
+    - wsize=1048576
+    - hard
+    - timeo=600
+    - retrans=2
+    - noatime
+    - nodiratime
+    - async
+  nfs:
+    server: "192.168.200.184"
+    path: "/volume1/media/audiobooks"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    name: audiobookshelf-audiobooks
+    namespace: audiobookshelf
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audiobookshelf-audiobooks
+  namespace: audiobookshelf
+  labels:
+    app: audiobookshelf
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: ""
+  volumeName: audiobookshelf-audiobooks
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+  labels:
+    app: audiobookshelf
+  annotations:
+    volume.longhorn.io/replica-count: "2"
+spec:
+  storageClassName: longhorn-talos
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+  labels:
+    app: audiobookshelf
+spec:
+  selector:
+    matchLabels:
+      app: audiobookshelf
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - foundry-vtt
+                        - audiobookshelf
+                topologyKey: kubernetes.io/hostname
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name: audiobookshelf
+        image:  ghcr.io/advplyr/audiobookshelf:2.27.0
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1500m
+            memory: 1536Mi
+        ports:
+        - containerPort:  80
+          name: audiobookshelf
+        volumeMounts:
+        - name: config-new
+          mountPath: /config
+        - name: metadata
+          mountPath: /metadata
+        - name: audiobooks
+          mountPath: /audiobooks
+        - name: comics
+          mountPath: /comics
+        - name: podcasts
+          mountPath: /podcasts
+      volumes:
+        - name: metadata
+          nfs:
+            server: "192.168.200.184"
+            path: "/volume1/Nomad/audiobookshelf-meta"
+        - name: audiobooks
+          persistentVolumeClaim:
+            claimName: audiobookshelf-audiobooks
+        - name: comics
+          nfs:
+            server: "192.168.200.184"
+            path: "/volume1/media/Comics"
+        - name: podcasts
+          nfs:
+            server: "192.168.200.184"
+            path: "/volume1/media/Podcasts"
+        - name: config-new
+          persistentVolumeClaim:
+            claimName: audiobookshelf
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+  labels:
+    app: audiobookshelf
+spec:
+  selector:
+    app: audiobookshelf
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  hostnames:
+    - audiobookshelf.lab.jake-watson.co.uk
+    - abs.lab.jake-watson.co.uk
+  parentRefs:
+    - name: cilium-gateway-external
+      namespace: default
+  rules:
+    # Download/upload paths — long timeout to support large audiobook/podcast file transfers
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/items
+        - path:
+            type: PathPrefix
+            value: /api/podcasts
+        - path:
+            type: PathPrefix
+            value: /api/upload
+      timeouts:
+        request: 0s            # no ceiling on slow-client upload body transmission
+        backendRequest: 600s   # 10 minutes: covers even large audiobook uploads/downloads on slow links
+      backendRefs:
+        - kind: Service
+          name: audiobookshelf
+          port: 80
+    # All other traffic — standard timeout
+    - timeouts:
+        backendRequest: 60s
+      backendRefs:
+        - kind: Service
+          name: audiobookshelf
+          port: 80
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: audiobookshelf-dns
+  namespace: audiobookshelf
+spec:
+  endpoints:
+    - dnsName: abs.lab.jake-watson.co.uk
+      recordTTL: 180
+      recordType: A
+      targets:
+        - 212.69.47.125

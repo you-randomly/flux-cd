@@ -1,0 +1,288 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: foundry-vtt
+---
+kind: ExternalSecret
+apiVersion: external-secrets.io/v1
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  refreshInterval: 10s
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  data:
+    - secretKey: password
+      remoteRef:
+        key: "1d5d6edc-8005-4313-8524-b1f601490707"
+    - secretKey: username
+      remoteRef:
+        key: "419ba4a2-8683-4fbd-811e-b1f60148c9aa"
+    - secretKey: adminPassword
+      remoteRef:
+        key: "d4595a98-1408-4218-a70f-b1f6014de185"
+    - secretKey: license-key
+      remoteRef:
+        key: "66aaa0b2-d962-4608-96c9-b1f6014d5534"
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: foundry-license
+  namespace: foundry-vtt
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: foundry-license
+  data:
+    - secretKey: license-key
+      remoteRef:
+        key: 66aaa0b2-d962-4608-96c9-b1f6014d5534
+---
+apiVersion: foundry.platform/v1alpha1
+kind: FoundryLicense
+metadata:
+  name: primary-license
+  namespace: foundry-vtt
+spec:
+  licenseSecretRef:
+    name: foundry-license
+    key: license-key
+  gateway:
+    parentRef:
+      name: cilium-gateway-external
+      namespace: default
+    dnsTarget: "212.69.47.125"
+    publicIP: "212.69.47.125"
+    baseDomain: "lab.jake-watson.co.uk"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  storageClassName: longhorn-talos
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: foundry-vtt-world-data
+  namespace: foundry-vtt
+spec:
+  storageClassName: longhorn-talos
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: foundry-vtt
+  template:
+    metadata:
+      labels:
+        app: foundry-vtt
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - foundry-vtt
+                        - audiobookshelf
+                topologyKey: kubernetes.io/hostname
+      initContainers:
+      - name: fix-permissions
+        image: busybox:1.36.1
+        command: ["sh", "-c", "chown -R 1000:1000 /data /worlds /foundryvtt-data"]
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+        - name: foundry-vtt
+          mountPath: /data
+        - name: foundry-vtt-world-data
+          mountPath: /worlds
+        - name: foundry-vtt-not-world-data
+          mountPath: /foundryvtt-data
+      containers:
+      - name: foundry-vtt
+        image: felddy/foundryvtt:13.347.0
+        ports:
+        - containerPort: 30000
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2560Mi
+        env:
+        - name: UV_THREADPOOL_SIZE
+          value: "6"
+        - name: NODE_OPTIONS
+          value: "--max-old-space-size=2048"
+        - name: CONTAINER_CACHE
+          value: /data/container_cache
+        - name: CONTAINER_CACHE_SIZE
+          value: "3"
+        - name: CONTAINER_PATCHES
+          value: /data/patches
+        - name: FOUNDRY_GID
+          value: "1000"
+        - name: FOUNDRY_UID
+          value: "1000"
+        - name: TIMEZONE
+          value: UTC
+        - name: FOUNDRY_COMPRESS_WEBSOCKET
+          value: "true"
+        - name: FOUNDRY_MINIFY_STATIC_FILES
+          value: "true"
+        - name: FOUNDRY_HOSTNAME
+          value: foundry-vtt.lab.jake-watson.co.uk
+        - name: FOUNDRY_LOCAL_HOSTNAME
+          value: foundry-vtt.lab.jake-watson.co.uk
+        - name: FOUNDRY_LANGUAGE
+          value: en.core
+        - name: FOUNDRY_CSS_THEME
+          value: foundry
+        - name: FOUNDRY_PROXY_SSL
+          value: "true"
+        - name: FOUNDRY_PROXY_PORT
+          value: "443"
+        - name: FOUNDRY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: foundry-vtt
+              key: username
+        - name: FOUNDRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: foundry-vtt
+              key: password
+        - name: FOUNDRY_ADMIN_KEY
+          valueFrom:
+            secretKeyRef:
+              name: foundry-vtt
+              key: adminPassword
+        - name: FOUNDRY_LICENSE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: foundry-vtt
+              key: license-key
+        - name: CONTAINER_VERBOSE
+          value: "true"
+        volumeMounts:
+        - name: foundry-vtt
+          mountPath: /data-old
+        - name: foundry-vtt-not-world-data
+          mountPath: /data
+      volumes:
+      - name: foundry-vtt-not-world-data
+        nfs:
+          server: "192.168.200.184"
+          path: "/volume1/Nomad/foundry-vtt"
+      - name: foundry-vtt
+        persistentVolumeClaim:
+          claimName: foundry-vtt
+      - name: foundry-vtt-world-data
+        persistentVolumeClaim:
+          claimName: foundry-vtt-world-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  selector:
+    app: foundry-vtt
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 30000
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  hostnames:
+    - foundry-vtt.lab.jake-watson.co.uk
+  parentRefs:
+    - name: cilium-gateway-external
+      namespace: default
+  rules:
+    - timeouts:
+        backendRequest: 0s
+      backendRefs:
+        - name: foundry-vtt
+          port: 80
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: foundry-vtt
+  namespace: foundry-vtt
+spec:
+  endpoints:
+    - dnsName: foundry-vtt.lab.jake-watson.co.uk
+      recordTTL: 300
+      recordType: A
+      targets:
+        - 212.69.47.125
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: foundry-bot
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: discord-bot-secrets
+  namespace: foundry-bot
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: discord-bot-secrets
+  data:
+    - secretKey: DISCORD_BOT_TOKEN
+      remoteRef:
+        key: 82483aaa-b257-4050-ba94-b3c100ea2968

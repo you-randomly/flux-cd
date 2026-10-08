@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: longhorn-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/warn-version: latest
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: longhorn
+      version: "v1.9.1"
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    preUpgradeChecker:
+      jobEnabled: false
+    metrics:
+      serviceMonitor:
+        enabled: true
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: ui-longhorn
+  namespace: longhorn-system
+spec:
+  hostnames:
+    - longhorn.lab.jake-watson.co.uk
+  parentRefs:
+    - name: cilium-gateway
+      namespace: default
+  rules:
+    - backendRefs:
+        - name: longhorn-frontend
+          port: 80
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-talos
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+parameters:
+  numberOfReplicas: "3"
+  dataLocality: "best-effort"
+  staleReplicaTimeout: "2880" # 48 hours in minutes
+  fromBackup: ""
+  fsType: "ext4"
+  reclaimPolicy: "Delete"
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: snapshot-1
+  namespace: longhorn-system
+spec:
+  cron: "0 */2 * * *"
+  task: "backup"
+  groups:
+  - default
+  retain: 12
+  concurrency: 2
