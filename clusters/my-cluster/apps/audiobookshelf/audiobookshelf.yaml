@@ -104,7 +104,7 @@ spec:
           # - Each init container must complete successfully before the next one starts.
       containers:
       - name: audiobookshelf
-        image:  ghcr.io/advplyr/audiobookshelf:2.27.0
+        image: ghcr.io/advplyr/audiobookshelf:2.27.0 # {"$imagepolicy": "flux-system:audiobookshelf"}
         resources:
           requests:
             cpu: 200m

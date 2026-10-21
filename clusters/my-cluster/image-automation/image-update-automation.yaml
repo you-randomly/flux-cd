@@ -1,0 +1,31 @@
+# Requires write access: set spec.sync.pullSecret on the FluxInstance to a
+# secret with push credentials. Updates go to a branch so they can be reviewed via PR.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@users.noreply.github.com
+      messageTemplate: |
+        chore: automated image update
+
+        {{ range .Changed.Changes -}}
+        - {{ .OldValue }} -> {{ .NewValue }}
+        {{ end -}}
+    push:
+      branch: flux-image-updates
+  update:
+    path: ./clusters/my-cluster/apps
+    strategy: Setters
