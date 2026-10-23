@@ -98,34 +98,34 @@ spec:
                         - foundry-vtt
                         - audiobookshelf
                 topologyKey: kubernetes.io/hostname
-      # initContainers:
-        # Init containers are exactly like regular containers, except:
+                # initContainers:
+          # Init containers are exactly like regular containers, except:
           # - Init containers always run to completion.
           # - Each init container must complete successfully before the next one starts.
       containers:
-      - name: audiobookshelf
-        image: ghcr.io/advplyr/audiobookshelf:2.27.0 # {"$imagepolicy": "flux-system:audiobookshelf"}
-        resources:
-          requests:
-            cpu: 200m
-            memory: 256Mi
-          limits:
-            cpu: 1500m
-            memory: 1536Mi
-        ports:
-        - containerPort:  80
-          name: audiobookshelf
-        volumeMounts:
-        - name: config-new
-          mountPath: /config
-        - name: metadata
-          mountPath: /metadata
-        - name: audiobooks
-          mountPath: /audiobooks
-        - name: comics
-          mountPath: /comics
-        - name: podcasts
-          mountPath: /podcasts
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf:2.37.2 # {"$imagepolicy": "flux-system:audiobookshelf"}
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1500m
+              memory: 1536Mi
+          ports:
+            - containerPort: 80
+              name: audiobookshelf
+          volumeMounts:
+            - name: config-new
+              mountPath: /config
+            - name: metadata
+              mountPath: /metadata
+            - name: audiobooks
+              mountPath: /audiobooks
+            - name: comics
+              mountPath: /comics
+            - name: podcasts
+              mountPath: /podcasts
       volumes:
         - name: metadata
           nfs:
@@ -188,8 +188,8 @@ spec:
             type: PathPrefix
             value: /api/upload
       timeouts:
-        request: 0s            # no ceiling on slow-client upload body transmission
-        backendRequest: 600s   # 10 minutes: covers even large audiobook uploads/downloads on slow links
+        request: 0s # no ceiling on slow-client upload body transmission
+        backendRequest: 600s # 10 minutes: covers even large audiobook uploads/downloads on slow links
       backendRefs:
         - kind: Service
           name: audiobookshelf
