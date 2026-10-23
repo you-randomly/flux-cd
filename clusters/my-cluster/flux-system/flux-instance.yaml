@@ -31,3 +31,4 @@ spec:
     url: "https://github.com/you-randomly/flux-cd.git"
     ref: "refs/heads/main"
     path: "clusters/my-cluster"
+    pullSecret: "flux-git-auth"

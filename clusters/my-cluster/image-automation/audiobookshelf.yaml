@@ -1,0 +1,23 @@
+# Minor/major image updates committed to Git
+# (docs: https://fluxoperator.dev/docs/crd/imageupdateautomation/)
+# The Deployment image carries a `# {"$imagepolicy": ...}` marker.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: audiobookshelf
+  namespace: flux-system
+spec:
+  image: ghcr.io/advplyr/audiobookshelf
+  interval: 1h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: audiobookshelf
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: audiobookshelf
+  policy:
+    semver:
+      range: ">=2.27.0"

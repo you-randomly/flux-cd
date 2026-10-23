@@ -1,0 +1,50 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: flux-git-auth
+  namespace: flux-system
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: flux-git-auth
+    template:
+      data:
+        username: git
+        password: "{{ .token }}"
+  data:
+    - secretKey: token
+      remoteRef:
+        key: "02199998-804c-4fee-8dad-b4ec0155c7a8"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@users.noreply.github.com
+      messageTemplate: |
+        chore: automated image update
+
+        {{ range .Changed.Changes -}}
+        - {{ .OldValue }} -> {{ .NewValue }}
+        {{ end -}}
+    push:
+      branch: flux-image-updates
+  update:
+    path: ./clusters/my-cluster/apps
+    strategy: Setters
