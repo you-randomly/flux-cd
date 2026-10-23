@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - sources/helm-repositories.yaml
   - cert-manager/cert-manager.yaml
+  - cilium/gateway-api-crds.yaml
   - cilium/cilium.yaml
   - external-secrets/external-secrets.yaml
   - external-dns/external-dns.yaml
