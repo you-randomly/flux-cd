@@ -1,21 +1,55 @@
-# Patch-level Helm updates (docs: https://fluxoperator.dev/docs/resourcesets/image-automation/)
-# The provider tracks the newest v1.21.x chart in OCI; the ResourceSet renders
-# an OCIRepository + HelmRelease pinned to that tag. Minor/major bumps stay manual:
-# change the semver range below.
-apiVersion: fluxcd.controlplane.io/v1
-kind: ResourceSetInputProvider
+# Combined Helm update automation for cert-manager:
+# 1. ImageRepository + ImagePolicy watch only minor/major (.0) releases (>=1.21.0)
+#    so ImageUpdateAutomation proposes minor/major bumps on the flux-image-updates branch.
+# 2. ResourceSet/cert-manager-version templates "~<< inputs.version >>" into the
+#    ResourceSetInputProvider so patch releases (v1.21.x) are applied automatically in-cluster.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
 metadata:
   name: cert-manager-chart
-  namespace: cert-manager
-  annotations:
-    fluxcd.controlplane.io/reconcileEvery: "1h"
+  namespace: flux-system
 spec:
-  type: OCIArtifactTag
-  url: oci://quay.io/jetstack/charts/cert-manager
-  filter:
-    includeTag: "^v"
-    semver: "~1.21.0"
-    limit: 1
+  image: quay.io/jetstack/charts/cert-manager
+  interval: 1h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: cert-manager-chart
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: cert-manager-chart
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.0$'
+  policy:
+    semver:
+      range: ">=1.21.0"
+---
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: cert-manager-version
+  namespace: cert-manager
+spec:
+  inputs:
+    - version: "1.21.0" # {"$imagepolicy": "flux-system:cert-manager-chart:tag"}
+  resources:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      metadata:
+        name: cert-manager-chart
+        namespace: cert-manager
+        annotations:
+          fluxcd.controlplane.io/reconcileEvery: "1h"
+          kustomize.toolkit.fluxcd.io/prune: disabled
+      spec:
+        type: OCIArtifactTag
+        url: oci://quay.io/jetstack/charts/cert-manager
+        filter:
+          includeTag: "^v"
+          semver: "~<< inputs.version >>"
+          limit: 1
 ---
 apiVersion: fluxcd.controlplane.io/v1
 kind: ResourceSet

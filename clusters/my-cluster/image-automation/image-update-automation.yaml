@@ -46,5 +46,5 @@ spec:
     push:
       branch: flux-image-updates
   update:
-    path: ./clusters/my-cluster/apps
+    path: ./clusters/my-cluster/image-automation
     strategy: Setters

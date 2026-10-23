@@ -1,6 +1,8 @@
-# Minor/major image updates committed to Git
-# (docs: https://fluxoperator.dev/docs/crd/imageupdateautomation/)
-# The Deployment image carries a `# {"$imagepolicy": ...}` marker.
+# Combined image update automation for audiobookshelf:
+# 1. ImageRepository + ImagePolicy watch only minor/major (.0) releases (>=2.27.0)
+#    so ImageUpdateAutomation proposes minor/major bumps on the flux-image-updates branch.
+# 2. ResourceSet/audiobookshelf-version templates "~<< inputs.version >>" into the
+#    ResourceSetInputProvider so patch releases (e.g. 2.27.x / 2.37.x) roll out automatically in-cluster.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
@@ -18,6 +20,123 @@ metadata:
 spec:
   imageRepositoryRef:
     name: audiobookshelf
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.0$'
   policy:
     semver:
       range: ">=2.27.0"
+---
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: audiobookshelf-version
+  namespace: audiobookshelf
+spec:
+  inputs:
+    - version: "2.37.0" # {"$imagepolicy": "flux-system:audiobookshelf:tag"}
+  resources:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      metadata:
+        name: audiobookshelf-image
+        namespace: audiobookshelf
+        annotations:
+          fluxcd.controlplane.io/reconcileEvery: "1h"
+      spec:
+        type: OCIArtifactTag
+        url: oci://ghcr.io/advplyr/audiobookshelf
+        filter:
+          semver: "~<< inputs.version >>"
+          limit: 1
+---
+apiVersion: fluxcd.controlplane.io/v1
+kind: ResourceSet
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  inputsFrom:
+    - apiVersion: fluxcd.controlplane.io/v1
+      kind: ResourceSetInputProvider
+      name: audiobookshelf-image
+  resources:
+    - apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: audiobookshelf
+        namespace: audiobookshelf
+        labels:
+          app: audiobookshelf
+        annotations:
+          kustomize.toolkit.fluxcd.io/prune: disabled
+      spec:
+        selector:
+          matchLabels:
+            app: audiobookshelf
+        replicas: 1
+        strategy:
+          type: Recreate
+        template:
+          metadata:
+            labels:
+              app: audiobookshelf
+            annotations:
+              instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
+          spec:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: app
+                            operator: In
+                            values:
+                              - foundry-vtt
+                              - audiobookshelf
+                      topologyKey: kubernetes.io/hostname
+            containers:
+              - name: audiobookshelf
+                image: ghcr.io/advplyr/audiobookshelf:<< inputs.tag >>
+                resources:
+                  requests:
+                    cpu: 200m
+                    memory: 256Mi
+                  limits:
+                    cpu: 1500m
+                    memory: 1536Mi
+                ports:
+                  - containerPort: 80
+                    name: audiobookshelf
+                volumeMounts:
+                  - name: config-new
+                    mountPath: /config
+                  - name: metadata
+                    mountPath: /metadata
+                  - name: audiobooks
+                    mountPath: /audiobooks
+                  - name: comics
+                    mountPath: /comics
+                  - name: podcasts
+                    mountPath: /podcasts
+            volumes:
+              - name: metadata
+                nfs:
+                  server: "192.168.200.184"
+                  path: "/volume1/Nomad/audiobookshelf-meta"
+              - name: audiobooks
+                persistentVolumeClaim:
+                  claimName: audiobookshelf-audiobooks
+              - name: comics
+                nfs:
+                  server: "192.168.200.184"
+                  path: "/volume1/media/Comics"
+              - name: podcasts
+                nfs:
+                  server: "192.168.200.184"
+                  path: "/volume1/media/Podcasts"
+              - name: config-new
+                persistentVolumeClaim:
+                  claimName: audiobookshelf
+            restartPolicy: Always
