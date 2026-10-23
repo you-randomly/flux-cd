@@ -7,6 +7,8 @@ resources:
   - external-secrets/external-secrets.yaml
   - external-dns/external-dns.yaml
   - longhorn/longhorn.yaml
+  - metrics-server/metrics-server.yaml
+  - kubelet-serving-cert-approver/kubelet-serving-cert-approver.yaml
   - vpa/vpa.yaml
   - victoria-metrics/victoria-metrics.yaml
   - opentelemetry/opentelemetry.yaml
