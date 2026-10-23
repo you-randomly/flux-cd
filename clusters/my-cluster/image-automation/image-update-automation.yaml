@@ -1,5 +1,24 @@
-# Requires write access: set spec.sync.pullSecret on the FluxInstance to a
-# secret with push credentials. Updates go to a branch so they can be reviewed via PR.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: flux-git-auth
+  namespace: flux-system
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: flux-git-auth
+    template:
+      data:
+        username: git
+        password: "{{ .token }}"
+  data:
+    - secretKey: token
+      remoteRef:
+        key: "02199998-804c-4fee-8dad-b4ec0155c7a8"
+---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:

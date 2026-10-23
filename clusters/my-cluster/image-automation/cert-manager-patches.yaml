@@ -13,6 +13,7 @@ spec:
   type: OCIArtifactTag
   url: oci://quay.io/jetstack/charts/cert-manager
   filter:
+    includeTag: "^v"
     semver: "~1.21.0"
     limit: 1
 ---
@@ -42,6 +43,8 @@ spec:
       metadata:
         name: cert-manager-controller
         namespace: cert-manager
+        annotations:
+          kustomize.toolkit.fluxcd.io/prune: disabled
       spec:
         interval: 1h
         chartRef:
