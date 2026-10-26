@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 1h
   type: oci
-  url: oci://ghcr.io/kro-run/helm-charts
+  url: oci://registry.k8s.io/kro/charts
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
