@@ -4,3 +4,4 @@ resources:
   - audiobookshelf/audiobookshelf.yaml
   - abs-bookclub/abs-bookclub.yaml
   - foundry-vtt/foundry-vtt.yaml
+  - foundry-platform/foundry-platform.yaml

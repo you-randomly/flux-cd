@@ -1,0 +1,40 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kro
+  namespace: flux-system
+spec:
+  interval: 1h
+  type: oci
+  url: oci://ghcr.io/kro-run/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kro
+  namespace: kro-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kro
+      version: "0.9.x"
+      sourceRef:
+        kind: HelmRepository
+        name: kro
+        namespace: flux-system
+      interval: 1h
+  targetNamespace: kro-system
+  install:
+    createNamespace: true
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    config:
+      featureGates:
+        CELOmitFunction: true

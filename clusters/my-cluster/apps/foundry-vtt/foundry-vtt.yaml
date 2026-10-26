@@ -50,6 +50,7 @@ metadata:
   name: primary-license
   namespace: foundry-vtt
 spec:
+  activeInstanceName: dstrahd
   licenseSecretRef:
     name: foundry-license
     key: license-key

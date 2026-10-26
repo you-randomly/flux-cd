@@ -14,4 +14,4 @@ resources:
   - vpa/vpa.yaml
   - victoria-metrics/victoria-metrics.yaml
   - opentelemetry/opentelemetry.yaml
-  - kratix/kratix.yaml
+  - kro/kro.yaml
