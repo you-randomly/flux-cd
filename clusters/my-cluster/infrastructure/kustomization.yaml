@@ -5,6 +5,7 @@ resources:
   - cert-manager/cert-manager.yaml
   - cilium/gateway-api-crds.yaml
   - cilium/cilium.yaml
+  - cilium/bgp.yaml
   - external-secrets/external-secrets.yaml
   - external-dns/external-dns.yaml
   - longhorn/longhorn.yaml
