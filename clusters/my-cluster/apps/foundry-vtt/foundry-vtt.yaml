@@ -30,6 +30,29 @@ spec:
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
+  name: foundry-credentials
+  namespace: foundry-vtt
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: bitwarden-secretsmanager
+    kind: ClusterSecretStore
+  target:
+    name: foundry-credentials
+  data:
+    - secretKey: password
+      remoteRef:
+        key: "1d5d6edc-8005-4313-8524-b1f601490707"
+    - secretKey: username
+      remoteRef:
+        key: "419ba4a2-8683-4fbd-811e-b1f60148c9aa"
+    - secretKey: adminPassword
+      remoteRef:
+        key: "d4595a98-1408-4218-a70f-b1f6014de185"
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
   name: foundry-license
   namespace: foundry-vtt
 spec:
