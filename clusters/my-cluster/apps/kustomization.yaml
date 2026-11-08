@@ -5,3 +5,4 @@ resources:
   - abs-bookclub/abs-bookclub.yaml
   - foundry-vtt/foundry-vtt.yaml
   - foundry-platform/foundry-platform.yaml
+  - ofd1-forecast/ofd1-forecast.yaml
