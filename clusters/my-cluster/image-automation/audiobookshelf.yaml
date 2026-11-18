@@ -33,7 +33,7 @@ metadata:
   namespace: audiobookshelf
 spec:
   inputs:
-    - version: "2.37.0" # {"$imagepolicy": "flux-system:audiobookshelf:tag"}
+    - version: "2.38.0" # {"$imagepolicy": "flux-system:audiobookshelf:tag"}
   resources:
     - apiVersion: fluxcd.controlplane.io/v1
       kind: ResourceSetInputProvider
